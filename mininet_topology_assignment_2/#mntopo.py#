@@ -14,7 +14,7 @@ class MNTopo(Topo):
 
         # Host and link configuration
         hostConfig = {'cpu': cpu}
-        linkConfig = {'bw': 1, 'delay': '1ms', 'loss': 0,
+        linkConfig = {'bw': 10, 'delay': '1ms', 'loss': 0,
                    'max_queue_size': max_queue_size }
 
         # Hosts and switches
@@ -27,8 +27,7 @@ class MNTopo(Topo):
         # Host-Switch Links
         self.addLink(sender, s1, **linkConfig)
         self.addLink(receiver, s3, **linkConfig)
-
+		
         # Switch-Switch Links
         self.addLink(s1, s2, **linkConfig)
         self.addLink(s2, s3, **linkConfig)
-        
