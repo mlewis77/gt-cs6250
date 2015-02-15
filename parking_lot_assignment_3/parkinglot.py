@@ -91,37 +91,29 @@ class ParkingLotTopo(Topo):
 
         # Switch ports 1:uplink 2:hostlink 3:downlink
         uplink, hostlink, downlink = 1, 2, 3
+	
+	s1 = self.addSwitch('s1')
+	h1 = self.addHost('h1', **hconfig)
 
-        # The following template code creates a parking lot topology
-        # for N = 1
-        # TODO: Replace the template code to create a parking lot topology for any arbitrary N (>= 1)
-        # Begin: Template code
-        s1 = self.addSwitch('s1')
-        h1 = self.addHost('h1', **hconfig)
+	#Wire up receiver
+	self.addLink(receiver, s1, port1=0, port2=uplink, **lconfig)
 
-        # Wire up receiver
-        self.addLink(receiver, s1,
-                      port1=0, port2=uplink, **lconfig)
+	#Wire up first host
+	self.addLink(h1, s1, port1=0, port2 =hostlink, **lconfig)
 
-        # Wire up clients:
-        self.addLink(h1, s1,
-                      port1=0, port2=hostlink, **lconfig)
 
-        # Uncomment the next 8 lines to create a N = 3 parking lot topology
-        #s2 = self.addSwitch('s2')
-        #h2 = self.addHost('h2', **hconfig)
-        #self.addLink(s1, s2,
-        #              port1=downlink, port2=uplink, **lconfig)
-        #self.addLink(h2, s2,
-        #              port1=0, port2=hostlink, **lconfig)
-        #s3 = self.addSwitch('s3')
-        #h3 = self.addHost('h3', **hconfig)
-        #self.addLink(s2, s3,
-        #              port1=downlink, port2=uplink, **lconfig)
-        #self.addLink(h3, s3,
-        #              port1=0, port2=hostlink, **lconfig)
-
-        # End: Template code
+        # Create N-1 switches and hosts
+	SwitchList = {}
+	SwitchList.append(s1)
+	for h in range(n):
+		host = self.addHost('h%s' % (h+1), **hconfig)
+		switch = self.addSwitch('s%s' % (s+1))
+		#add switch to SwitchList for later reference
+		SwitchList.append(switch)
+		#link between newly added host and switch
+		self.addLink(host, swithc, port1=0, port2=hostlink, **lconfig)
+		#link between latest two switches
+		self.addLink(SwitchList[h-1], SwitchList[h], port1=downlink, port2 = uplink, **lconfig)
 
 def waitListening(client, server, port):
     "Wait until server is listening on port"
@@ -171,13 +163,21 @@ def run_parkinglot_expt(net, n):
 
     waitListening(sender1, recvr, port)
 
-    # TODO: start the sender iperf processes and wait for the flows to finish
-    # Hint: Use getNodeByName() to get a handle on each sender.
-    # Hint: Use sendCmd() and waitOutput() to start iperf and wait for them to finish
-    # Hint: waitOutput waits for the command to finish allowing you to wait on a particular process on the host
-    # iperf command to start flow: 'iperf -c %s -p %s -t %d -i 1 -yc > %s/iperf_%s.txt' % (recvr.IP(), 5001, seconds, args.dir, node_name)
-    # Hint (not important): You may use progress(t) to track your experiment progress
+    # Use sendCmd to start iperf
+    for h in hosts:
+        h.sendCmd('iperf -c %s -p %s -t %d -i 1 -yc %s/iperf_%s.txt' % (recvr.IP(), 5001, seconds, args.dir, node_name))
 
+	# Create output files to monitor
+	# Use waitOutput to wait for a command to finish
+	results = {}
+	for h in hosts:
+		results[h] = '%s/iperf_%s.txt' % h.name
+		results[h.name] = h.waitOutput()
+
+	# Track experiment progress
+	progress (seconds)
+	
+	#Kill iperf process
     recvr.cmd('kill %iperf')
 
     # Shut down monitors
