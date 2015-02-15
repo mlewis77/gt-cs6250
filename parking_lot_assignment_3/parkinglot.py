@@ -103,7 +103,7 @@ class ParkingLotTopo(Topo):
 
 
         # Create N-1 switches and hosts
-	SwitchList = {}
+	SwitchList = []
 	SwitchList.append(s1)
 	for h in range(n):
 		host = self.addHost('h%s' % (h+1), **hconfig)
